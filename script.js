@@ -30,28 +30,34 @@ function clearError() {
 }
 
 function isValidApiKey(apiKey) {
-  return /^sk-[A-Za-z0-9]{48}$/.test(apiKey);
+  // This regex allows for 'sk-' prefix and a longer string of characters
+  return /^sk-[A-Za-z0-9-_]{32,}$/.test(apiKey);
+}
+
+if (!isValidApiKey(apiKey)) {
+  showError('Invalid API key format. Please check your API key and try again.');
+  return;
 }
 
 async function generateCode(prompt, apiKey) {
-  const configuration = new OpenAI.Configuration({
-    apiKey: apiKey,
+  const openai = new OpenAI({
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true
   });
-  const openai = new OpenAI.OpenAIApi(configuration);
 
   try {
-    const response = await openai.createCompletion({
-      model: "text-davinci-002",
-      prompt: `Generate HTML, CSS, and JavaScript code for: ${prompt}`,
-      max_tokens: 1000,
-      n: 1,
-      stop: null,
-      temperature: 0.7,
-    });
+      const response = await openai.completions.create({
+          model: "text-davinci-002",
+          prompt: `Generate HTML, CSS, and JavaScript code for: ${prompt}`,
+          max_tokens: 1000,
+          n: 1,
+          stop: null,
+          temperature: 0.7,
+      });
 
-    return response.data.choices[0].text.trim();
+      return response.choices[0].text.trim();
   } catch (error) {
-    throw new Error(`OpenAI API error: ${error.message}`);
+      throw new Error(`OpenAI API error: ${error.message}`);
   }
 }
 
